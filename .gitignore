@@ -1,0 +1,5 @@
+server/.env
+server/__pycache__
+client/__pycache__
+client/output
+GreenShell.psd
