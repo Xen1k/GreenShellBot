@@ -8,19 +8,19 @@ from config import *
 from utils import *
 import os
 
-
 app = Flask(__name__)
 socketio = SocketIO(app)
 
 
-@socketio.on('initialize_new_client')
-def initialize_new_client(new_client_id):
-    wait_until(lambda: user_initializer.last_client_id == new_client_id)
-    emit('set_initialized', new_client_id)
-    bot.send_message(user_initializer.last_telegram_user_id, "Initialized")
-    new_user = BotMessagesHandler(new_client_id)
-    bot_users[new_client_id] = new_user
-    bot.register_next_step_handler(user_initializer.last_message, new_user.get_menu_messages)
+@app.route('/add-pending-client', methods=['POST'])
+def add_pending_client():
+    pending_init_codes.append(request.form['init_code'])
+    return '0'
+
+@app.route('/wait-for-initialization', methods=['POST'])
+def wait_for_initialization():
+    wait_until(lambda: request.form['init_code'] in bot_users)
+    return '0'
 
 @socketio.on('command_response')
 def handle_command_response(data):
@@ -28,12 +28,14 @@ def handle_command_response(data):
     try:
         current_user = bot_users.get(client_id) 
     except:
-        print("Fatal. No such user.")
+        print('Fatal. No such user.')
         return
-    try:
-        current_user.last_command_reply = data[(len(client_id) + 1)::]
-    except:
-        current_user.last_command_reply = ''
+    
+    command_reply = data[(len(client_id) + 1)::]
+    if(len(command_reply) > 0):
+        bot.send_message(current_user.chat_id, command_reply)
+        bot.register_next_step_handler_by_chat_id(current_user.chat_id, current_user.get_shell_commands)
+    
     wait_until(lambda: len(current_user.last_command) > 0)
     emit('handle_bot_command', current_user.last_command)
     current_user.last_command = ''
@@ -43,14 +45,6 @@ def get_message():
     bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
     return "Connected", 200
 
-@bot.message_handler(commands=['start'])
-def get_start_menu_messages(message):
-    if message.text == "/start":
-        bot.send_message(message.from_user.id, "Input your initialization number:")
-        bot.register_next_step_handler(message, user_initializer.get_initialization_code_messages)
-        
-    else:
-        bot.send_message(message.from_user.id, "Try /start")
 
 
 if __name__ == '__main__':

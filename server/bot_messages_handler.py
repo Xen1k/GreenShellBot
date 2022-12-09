@@ -9,62 +9,89 @@ bot.remove_webhook()
 bot.set_webhook(url=URL + '/' + os.getenv('BOT_TOKEN'))
 
 
-bot_users = {} # "'client-id' : object"
+pending_init_codes = []
+'''List of peding clients (initialization codes)'''
 
-class UserInitilizer:
-    """Handles user initializtion process."""
-    def __init__(self):
-        self.last_client_id = '' 
-        """ last typed initialization code (including messages from all users)"""
+bot_users = {} 
+'''Dict of connected bot users: 'init_code' : BotUser'''
 
-        self.last_telegram_user_id = '' 
-        """last typed telegram user id (including messages from all users)"""
+main_menu_label = "If you have a PC client program run /init.\nTo get client program run /get. \n/help to show more info"
 
-        self.last_message = None
-        """last typed message (including messages from all users)"""
-
-    def get_initialization_code_messages(self, message):
-        self.last_client_id = message.text
-        self.last_telegram_user_id = message.from_user.id
-        self.last_message = message
-
-user_initializer = UserInitilizer()
-
-
-class BotMessagesHandler:
-    def __init__(self, client_id):
+class BotUser:
+    def __init__(self, init_code, chat_id):
         self.last_command = ''
-        self.last_command_reply = ''
-        self.telegram_user_id = '' # Necessarry?
-        self.client_id = client_id # Necessarry?
+        self.init_code = init_code
+        self.chat_id = chat_id
         @bot.message_handler(content_types=['text'])
         def _get_menu_messages(message):
             self.get_menu_messages(message)
-      
 
     def get_menu_messages(self, message):
         if message.text == "/shell":
             bot.send_message(message.from_user.id, "Start. Write 'exit' to terminate connection. Input shell command:", reply_markup=shell_menu_markup)
-            bot.register_next_step_handler(message, self.__get_shell_commands)
-        if message.text == "/init":
-            bot.send_message(message.from_user.id, "Input your initialization number:")
-            bot.register_next_step_handler(message, user_initializer.get_initialization_code_messages)
+            bot.register_next_step_handler(message, self.get_shell_commands)
+        elif message.text == "/init":
+            bot.send_message(message.from_user.id, "Input your initialization number:", reply_markup=init_menu_markup)
+            bot.register_next_step_handler(message, get_initialization_code_messages)
         elif message.text == "/help":
             bot.send_message(message.from_user.id, "Change working drives: 'DRIVE_NAME' + ':' (Ex: 'D:')\nStart with: /shell")
+            bot.register_next_step_handler(message, self.get_menu_messages)
         else:
-            bot.send_message(message.from_user.id, "Unknown command. Try /help or select option from keyboard below.", reply_markup=main_menu_markup)
+            bot.send_message(message.from_user.id, "Unknown command. Try /help or select option from keyboard below.", reply_markup=shell_main_menu_markup)
+            bot.register_next_step_handler(message, self.get_menu_messages)
 
-
-
-    def __get_shell_commands(self, message):
+    def get_shell_commands(self, message):
         if(message.text.lower() == 'exit'): 
-            bot.send_message(message.from_user.id, 'Terminated', reply_markup=main_menu_markup)
+            bot.send_message(message.from_user.id, 'Terminated', reply_markup=shell_main_menu_markup)
+            bot.register_next_step_handler(message, self.get_menu_messages)
+            self.last_command = ''
             return
         self.last_command = message.text
-        wait_until(lambda: len(self.last_command_reply) > 0)
-        bot.send_message(message.from_user.id, self.last_command_reply)
-        self.last_command_reply = ''
-        bot.register_next_step_handler(message, self.__get_shell_commands)
+
+
+def get_initialization_code_messages(message):
+        if(message.text.lower() == '/exit'):
+            bot.send_message(message.from_user.id, main_menu_label, reply_markup=main_menu_markup)
+            bot.register_next_step_handler(message, get_main_menu_messages)  
+        elif(message.text in pending_init_codes):
+            # Initialize new user
+            new_user = BotUser(init_code=message.text, chat_id=message.from_user.id)
+            bot_users[message.text] = new_user
+            bot.send_message(message.from_user.id, 
+                            "Initialized.\nRun /shell to connect to pc.\nInitialize again with /init. \n/help for info",
+                            reply_markup=shell_main_menu_markup)
+            bot.register_next_step_handler(message, new_user.get_menu_messages)  
+            # Remove from pending 
+            pending_init_codes.remove(message.text)
+        else:
+            bot.send_message(message.from_user.id, "Wrong initialization code. Try again. (Or /exit to exit to main menu)")
+            bot.register_next_step_handler(message, get_initialization_code_messages)
+
+
+
+@bot.message_handler(content_types=['text'])
+def handle_first_message(message):
+    if message.text == "/start":
+        bot.send_message(message.from_user.id, main_menu_label, reply_markup=main_menu_markup)
+        bot.register_next_step_handler(message, get_main_menu_messages)
+    else:
+        bot.send_message(message.from_user.id, "Try /start")
+
+def get_main_menu_messages(message):
+    if message.text == "/init":
+        bot.send_message(message.from_user.id, "Input your initialization number (Or /exit to exit to main menu):", reply_markup=init_menu_markup)
+        bot.register_next_step_handler(message, get_initialization_code_messages)
+    else:
+        if message.text == "/get":
+            bot.send_message(message.from_user.id, "Download program here: ...")
+        elif message.text == "/help":
+            bot.send_message(message.from_user.id, "Help will be here")
+        else:
+            bot.send_message(message.from_user.id, "Try /help")
+        bot.register_next_step_handler(message, get_main_menu_messages)
+
+
+
 
 
   
