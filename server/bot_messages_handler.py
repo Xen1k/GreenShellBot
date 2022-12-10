@@ -33,6 +33,7 @@ class BotUser:
         elif message.text == "/init":
             bot.send_message(message.from_user.id, "Input your initialization number:", reply_markup=init_menu_markup)
             bot.register_next_step_handler(message, get_initialization_code_messages)
+            del bot_users[self.init_code]
         elif message.text == "/help":
             bot.send_message(message.from_user.id, "Change working drives: 'DRIVE_NAME' + ':' (Ex: 'D:')\nStart with: /shell")
             bot.register_next_step_handler(message, self.get_menu_messages)
@@ -50,10 +51,10 @@ class BotUser:
 
 
 def get_initialization_code_messages(message):
-        if(message.text.lower() == '/exit'):
+        if message.text.lower() == '/exit':
             bot.send_message(message.from_user.id, main_menu_label, reply_markup=main_menu_markup)
             bot.register_next_step_handler(message, get_main_menu_messages)  
-        elif(message.text in pending_init_codes):
+        elif message.text in pending_init_codes:
             # Initialize new user
             new_user = BotUser(init_code=message.text, chat_id=message.from_user.id)
             bot_users[message.text] = new_user
@@ -64,7 +65,10 @@ def get_initialization_code_messages(message):
             # Remove from pending 
             pending_init_codes.remove(message.text)
         else:
-            bot.send_message(message.from_user.id, "Wrong initialization code. Try again. (Or /exit to exit to main menu)")
+            if message.text in bot_users:
+                bot.send_message(message.from_user.id, "This client has already been initialized. Try again. (Or /exit to exit to main menu)")
+            else:
+                bot.send_message(message.from_user.id, "Wrong initialization code. Try again. (Or /exit to exit to main menu)")
             bot.register_next_step_handler(message, get_initialization_code_messages)
 
 

