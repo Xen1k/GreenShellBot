@@ -15,7 +15,11 @@ pending_init_codes = []
 bot_users = {} 
 '''Dict of connected bot users: 'init_code' : BotUser'''
 
-main_menu_label = "If you have a PC client program run /init.\nTo get client program run /get. \n/help to show more info"
+main_menu_label = "If you have a PC client program and initialization code - run /init.\nTo get client program run /get. \n/help to show more info"
+main_menu_help_label = '''For cmd commands execution Green Shell client program is needed. You can get it by typing /get.\n
+After opening the program you can get initialization code by running...\n
+The program starts automatically when you turn on your computer.\n
+Remember, the initialization code is const and unique for each machine.'''
 
 class BotUser:
     def __init__(self, init_code, chat_id):
@@ -71,8 +75,6 @@ def get_initialization_code_messages(message):
                 bot.send_message(message.from_user.id, "Wrong initialization code. Try again. (Or /exit to exit to main menu)")
             bot.register_next_step_handler(message, get_initialization_code_messages)
 
-
-
 @bot.message_handler(content_types=['text'])
 def handle_first_message(message):
     if message.text == "/start":
@@ -89,7 +91,7 @@ def get_main_menu_messages(message):
         if message.text == "/get":
             bot.send_message(message.from_user.id, "Download program here: ...")
         elif message.text == "/help":
-            bot.send_message(message.from_user.id, "Help will be here")
+            bot.send_message(message.from_user.id, main_menu_help_label)
         else:
             bot.send_message(message.from_user.id, "Try /help")
         bot.register_next_step_handler(message, get_main_menu_messages)

