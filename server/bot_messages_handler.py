@@ -35,7 +35,7 @@ class BotUser:
             bot.register_next_step_handler(message, get_initialization_code_messages)
             del bot_users[self.init_code]
         elif message.text == "/help":
-            bot.send_message(message.from_user.id, "Change working drives: 'DRIVE_NAME' + ':' (Ex: 'D:')\nStart with: /shell")
+            bot.send_message(message.from_user.id, "Change working drives: 'DRIVE_NAME' + ':' (Ex: 'D:')\nEGet PC screen with 'screenshot' command\nStart with: /shell")
             bot.register_next_step_handler(message, self.get_menu_messages)
         else:
             bot.send_message(message.from_user.id, "Unknown command. Try /help or select option from keyboard below.", reply_markup=shell_main_menu_markup)
