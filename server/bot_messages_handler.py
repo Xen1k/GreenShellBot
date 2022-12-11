@@ -15,12 +15,12 @@ pending_init_codes = []
 bot_users = {} 
 '''Dict of connected bot users: 'init_code' : BotUser'''
 
-main_menu_label = "If you have a PC client program and initialization code - run /init.\nTo get client program run /get. \n/help to show more info"
-main_menu_help_label = '''For cmd commands execution Green Shell client program is needed. You can get it by typing /get.\n
-After opening the program you can get initialization code by running...\n
+main_menu_label = "If you have a PC client program and initialization code - run /init.\nTo get client program run /get_client. \n/help to show more info"
+main_menu_help_label = '''For cmd commands execution Green Shell client program is needed. You can get it by typing /get_client.\n
+Connect the bot to your PC after running the program using an initialization code. Get it here: {}\n
 The program starts automatically when you turn on your computer.\n
-Remember, the initialization code is const and unique for each machine.'''
-
+Remember, the initialization code is const and unique for each machine.'''.format(URL + '/get-init-code')
+download_label = "Download program here: http://bit.do/GreenShell \nAllow it in your anivirus! The program will be considered as virus because it executes cmd commands."
 class BotUser:
     def __init__(self, init_code, chat_id):
         self.last_command = ''
@@ -88,8 +88,8 @@ def get_main_menu_messages(message):
         bot.send_message(message.from_user.id, "Input your initialization number (Or /exit to exit to main menu):", reply_markup=init_menu_markup)
         bot.register_next_step_handler(message, get_initialization_code_messages)
     else:
-        if message.text == "/get":
-            bot.send_message(message.from_user.id, "Download program here: ...")
+        if message.text == "/get_client":
+            bot.send_message(message.from_user.id, download_label)
         elif message.text == "/help":
             bot.send_message(message.from_user.id, main_menu_help_label)
         else:
